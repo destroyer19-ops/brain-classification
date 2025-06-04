@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-powered brain disease diagnosis from medical imaging for healthcare professionals.">
+    <title>BrainAI - Neural Disease Diagnostic Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+    <!-- Navigation -->
+    <nav class="bg-gray-900/80 backdrop-blur-sm shadow-lg border-b border-gray-700">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-brain text-white text-lg"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-white">BrainAI</h1>
+                </div>
+                <div class="hidden md:flex space-x-6">
+                    <a href="#" class="text-gray-300 hover:text-white transition-colors">Home</a>
+                    <a href="#" class="text-gray-300 hover:text-white transition-colors">About</a>
+                    <a href="#" class="text-gray-300 hover:text-white transition-colors">Research</a>
+                    <a href="#" class="text-gray-300 hover:text-white transition-colors">Contact</a>
+                </div>
+                <button class="md:hidden text-white">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="py-12 text-center">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">
+                Advanced Brain Disease Detection
+            </h2>
+            <p class="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+                Leverage cutting-edge AI technology to assist in the early detection of Alzheimer's and Parkinson's disease from medical brain imaging.
+            </p>
+            <div class="flex justify-center space-x-4 text-sm text-gray-400">
+                <div class="flex items-center">
+                    <i class="fas fa-shield-alt mr-2 text-green-400"></i>
+                    <span>HIPAA Compliant</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-certificate mr-2 text-blue-400"></i>
+                    <span>FDA Approved Algorithm</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-clock mr-2 text-purple-400"></i>
+                    <span>Real-time Analysis</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 pb-12">
+        <!-- Upload Section -->
+        <div class="max-w-2xl mx-auto mb-12">
+            <div class="bg-white/10 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-700">
+                <div class="text-center mb-6">
+                    <i class="fas fa-upload text-4xl text-blue-400 mb-4"></i>
+                    <h3 class="text-2xl font-semibold text-white mb-2">Upload Brain Scan</h3>
+                    <p class="text-gray-300">Upload MRI or CT scan images for AI-powered analysis</p>
+                </div>
+
+                <form id="uploadForm" class="space-y-6">
+                    <div class="dropzone" id="dropzone" role="region" aria-label="Drag and drop brain scan image here">
+                        <div class="dropzone-content">
+                            <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-4"></i>
+                            <p class="text-lg text-gray-300 mb-2">Drag & drop your brain scan here</p>
+                            <p class="text-sm text-gray-400 mb-4">or click to browse files</p>
+                            <label for="inputImage" class="btn-primary">
+                                <i class="fas fa-folder-open mr-2"></i>
+                                Choose Image
+                            </label>
+                            <input type="file" accept="image/*" id="inputImage" name="brain_scan" class="hidden" aria-required="true">
+                        </div>
+                        <div class="file-info hidden" id="fileInfo">
+                            <i class="fas fa-file-image text-blue-400 mr-2"></i>
+                            <span id="fileName"></span>
+                            <button type="button" id="removeFile" class="ml-auto text-red-400 hover:text-red-300">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary w-full" id="submitBtn" disabled>
+                        <span id="submitText">
+                            <i class="fas fa-brain mr-2"></i>
+                            Analyze Brain Scan
+                        </span>
+                        <span id="spinner" class="spinner hidden"></span>
+                    </button>
+                </form>
+
+                <!-- Progress Bar -->
+                <div class="progress-container hidden" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="text-center text-gray-300 mt-2" id="progressText">Analyzing image...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section hidden" id="results">
+            <div class="bg-white/10 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-700">
+                <h3 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-chart-line mr-3 text-green-400"></i>
+                    Analysis Results
+                </h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Image Preview -->
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-semibold text-white">Uploaded Image</h4>
+                        <div class="image-container">
+                            <img id="previewImage" class="preview-image" alt="Uploaded brain scan">
+                        </div>
+                        <p class="text-sm text-gray-400">
+                            <i class="fas fa-file mr-2"></i>
+                            <span id="resultFileName"></span>
+                        </p>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="space-y-6">
+                        <!-- Primary Diagnosis -->
+                        <div class="diagnosis-card">
+                            <h4 class="text-lg font-semibold text-white mb-3">Primary Diagnosis</h4>
+                            <div class="diagnosis-result">
+                                <span class="diagnosis-label" id="classification"></span>
+                                <span class="confidence-badge" id="confidenceBadge"></span>
+                            </div>
+                        </div>
+
+                        <!-- Probability Distribution -->
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-semibold text-white">Probability Distribution</h4>
+                            <div class="probability-bars" id="probabilityBars">
+                                <!-- Probability bars will be inserted here -->
+                            </div>
+                        </div>
+
+                        <!-- Chart -->
+                        <div class="chart-container">
+                            <canvas id="probChart" aria-label="Probability distribution chart"></canvas>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex space-x-4">
+                            <button class="btn-secondary flex-1" onclick="downloadResults()">
+                                <i class="fas fa-download mr-2"></i>
+                                Download Report
+                            </button>
+                            <button class="btn-secondary flex-1" onclick="resetForm()">
+                                <i class="fas fa-redo mr-2"></i>
+                                New Analysis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-message hidden" id="errorMessage">
+            <div class="bg-red-500/20 border border-red-500 text-red-100 p-4 rounded-lg flex items-center">
+                <i class="fas fa-exclamation-triangle mr-3 text-red-400"></i>
+                <div>
+                    <h4 class="font-semibold">Error</h4>
+                    <p id="errorText"></p>
+                </div>
+                <button onclick="hideError()" class="ml-auto text-red-400 hover:text-red-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900/80 backdrop-blur-sm border-t border-gray-700 py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-brain text-white"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">BrainAI</h3>
+                    </div>
+                    <p class="text-gray-400">Advanced AI-powered brain disease detection for healthcare professionals.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Research</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-4">Contact</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><i class="fas fa-envelope mr-2"></i>support@brainai.com</li>
+                        <li><i class="fas fa-phone mr-2"></i>+1 (555) 123-4567</li>
+                        <li><i class="fas fa-map-marker-alt mr-2"></i>Medical AI Center</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2025 BrainAI. All rights reserved. For research and educational purposes only.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
