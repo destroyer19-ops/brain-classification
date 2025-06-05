@@ -9,20 +9,88 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 @app.route('/')
 def index():
-    return "Brain Disease Diagnosis API"
+    return send_from_directory('static', 'index.html')
 
-@app.route("/classify", methods=["POST"])
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory('static', filename)
+
+@app.route('/api/health')
+def health_check():
+    return jsonify({
+        "status": "healthy", 
+        "message": "Brain Disease Diagnosis API is running",
+        "model_loaded": MODEL_LOADED,
+        "model_format": ".keras"
+    })
+
+@app.route('/api/model-info')
+def model_info():
+    """Get information about the loaded model"""
+    if MODEL_LOADED:
+        try:
+            return jsonify({
+                "model_loaded": True,
+                "model_format": ".keras",
+                "input_shape": str(loaded_model.input_shape),
+                "output_shape": str(loaded_model.output_shape),
+                "model_path": MODEL_PATH,
+                "classes": classification_classes
+            })
+        except Exception as e:
+            return jsonify({"error": f"Error getting model info: {str(e)}"}), 500
+    else:
+        return jsonify({
+            "model_loaded": False,
+            "message": "Using mock model for demonstration"
+        })
+
+@app.route("/api/classify", methods=["POST"])
 def classify():
-    if "xray_image" not in request.files:
-        return jsonify({"error": "No file part"}), 400
+    try:
+        # Validate request
+        if "brain_scan" not in request.files:
+            return jsonify({"error": "No file uploaded. Please select a brain scan image."}), 400
 
-    xray_image = request.files["xray_image"]
-    if xray_image.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+        brain_scan = request.files["brain_scan"]
+        if brain_scan.filename == '':
+            return jsonify({"error": "No file selected. Please choose a valid image file."}), 400
 
-    img_array = preprocess_image(xray_image)
-    classification = classify_image(img_array)
-    return jsonify(classification)
+        # Validate file type
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
+        file_extension = brain_scan.filename.rsplit('.', 1)[1].lower() if '.' in brain_scan.filename else ''
+        
+        if file_extension not in allowed_extensions:
+            return jsonify({"error": "Invalid file type. Please upload an image file (PNG, JPG, JPEG, GIF, BMP, TIFF)."}), 400
 
+        # Process and classify image
+        img_array = preprocess_image(brain_scan)
+        classification_result, model_info = classify_image(img_array)
+        
+        return jsonify({
+            "success": True,
+            "data": classification_result,
+            "model_info": model_info
+        })
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
+
+@app.errorhandler(413)
+def too_large(e):
+    return jsonify({"error": "File too large. Please upload an image smaller than 16MB."}), 413
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"error": "Endpoint not found."}), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    return jsonify({"error": "Internal server error. Please try again later."}), 500
+    
 if __name__ == "__main__":
-    app.run(debug=False,port=5173)
+    port = int(os.environ.get("PORT", 5000))  # Render sets PORT environment variable
+    app.run(debug=False, port=port, host='0.0.0.0')
