@@ -1,11 +1,12 @@
 import os
-from flask import request, jsonify
-# import tensorflow as tf
-# print(tf.__version__)
-from config import app
+from flask import Flask, request, jsonify, send_from_directory
+from config import app, MODEL_LOADED, MODEL_PATH, loaded_model
 from utils import classify_image, preprocess_image
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
+# Set maximum file size (16MB)
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 @app.route('/')
 def index():
@@ -18,7 +19,7 @@ def static_files(filename):
 @app.route('/api/health')
 def health_check():
     return jsonify({
-        "status": "healthy", 
+        "status": "healthy",
         "message": "Brain Disease Diagnosis API is running",
         "model_loaded": MODEL_LOADED,
         "model_format": ".keras"
@@ -27,7 +28,7 @@ def health_check():
 @app.route('/api/model-info')
 def model_info():
     """Get information about the loaded model"""
-    if MODEL_LOADED:
+    if MODEL_LOADED and loaded_model is not None:
         try:
             return jsonify({
                 "model_loaded": True,
@@ -42,12 +43,16 @@ def model_info():
     else:
         return jsonify({
             "model_loaded": False,
-            "message": "Using mock model for demonstration"
-        })
+            "message": "No model loaded"
+        }), 503
 
 @app.route("/api/classify", methods=["POST"])
 def classify():
+    """Classify an uploaded brain scan image"""
     try:
+        if not MODEL_LOADED or loaded_model is None:
+            return jsonify({"error": "Model not loaded. Please check server configuration."}), 503
+
         # Validate request
         if "brain_scan" not in request.files:
             return jsonify({"error": "No file uploaded. Please select a brain scan image."}), 400
@@ -65,12 +70,11 @@ def classify():
 
         # Process and classify image
         img_array = preprocess_image(brain_scan)
-        classification_result, model_info = classify_image(img_array)
+        classification_result = classify_image(img_array)
         
         return jsonify({
             "success": True,
-            "data": classification_result,
-            "model_info": model_info
+            "data": classification_result
         })
 
     except ValueError as e:
@@ -90,7 +94,7 @@ def not_found(e):
 @app.errorhandler(500)
 def internal_error(e):
     return jsonify({"error": "Internal server error. Please try again later."}), 500
-    
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render sets PORT environment variable
+    port = int(os.environ.get("PORT", 5000))
     app.run(debug=False, port=port, host='0.0.0.0')
