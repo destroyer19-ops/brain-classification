@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from config import app, MODEL_LOADED, MODEL_PATH, loaded_model
 from utils import classify_image, preprocess_image
 
@@ -7,14 +7,6 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 # Set maximum file size (16MB)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-
-@app.route('/')
-def index():
-    return send_from_directory('static', 'index.html')
-
-@app.route('/static/<path:filename>')
-def static_files(filename):
-    return send_from_directory('static', filename)
 
 @app.route('/api/health')
 def health_check():
