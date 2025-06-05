@@ -1,4 +1,5 @@
-import { Chart } from "@/components/ui/chart"
+// Remove the import statement - Chart.js should be loaded via CDN in HTML
+
 class BrainDiagnosisApp {
   constructor() {
     this.initializeElements()
@@ -146,7 +147,7 @@ class BrainDiagnosisApp {
       // Simulate progress
       this.showProgress()
 
-      const response = await fetch("/api/classify", {
+      const response = await fetch("https://parkinson-no1w.onrender.com/api/classify", {
         method: "POST",
         body: formData,
       })
