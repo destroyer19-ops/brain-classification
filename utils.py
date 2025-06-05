@@ -1,23 +1,18 @@
 """
 Utility functions for the web app
 """
-
 import os
-
+import tensorflow as tf
 from tensorflow.keras.preprocessing.image import img_to_array
 from PIL import Image
 import numpy as np
-from config import loaded_model
-from flask import jsonify
-# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
+from config import loaded_model, MODEL_LOADED
 
 classification_classes = {
-    0: 'Alzheimer\'s Disease',
-    1: 'Normal',
-    2: 'Parkinson\'s Disease',
+    0: "Alzheimer's Disease",
+    1: "Normal",
+    2: "Parkinson's Disease",
 }
-
 
 def preprocess_image(image_file):
     """
@@ -33,15 +28,15 @@ def preprocess_image(image_file):
         # Open and convert image
         image = Image.open(image_file).convert("RGB")
         
-        # Get model input shape (assuming it's (batch, height, width, channels))
-        if hasattr(loaded_model, 'input_shape'):
+        # Get model input shape
+        if hasattr(loaded_model, 'input_shape') and loaded_model is not None:
             input_shape = loaded_model.input_shape
             if len(input_shape) == 4:  # (batch, height, width, channels)
                 target_size = (input_shape[1], input_shape[2])
             else:
-                target_size = (224, 224)  # Default fallback
+                target_size = (224, 224)
         else:
-            target_size = (224, 224)  # Default fallback
+            target_size = (224, 224)
         
         # Resize image
         image = image.resize(target_size)
@@ -52,17 +47,13 @@ def preprocess_image(image_file):
         # Add batch dimension
         image = np.expand_dims(image, axis=0)
         
-        # Normalize pixel values (adjust based on your model's training)
-        # Common normalizations:
-        image = image / 255.0  # Scale to [0, 1]
-        # OR: image = (image - 127.5) / 127.5  # Scale to [-1, 1]
-        # OR: Use ImageNet normalization if your model was trained with it
+        # Normalize pixel values
+        image = image / 255.0
         
         return image
         
     except Exception as e:
         raise ValueError(f"Error processing image: {str(e)}")
-
 
 def classify_image(image_array):
     """
@@ -74,16 +65,23 @@ def classify_image(image_array):
     Returns:
     dict: Classification results with probabilities
     """
+    if not MODEL_LOADED or loaded_model is None:
+        raise ValueError("Model not loaded")
+    
     try:
         # Make prediction
         prediction = loaded_model.predict(image_array, verbose=0)[0]
+        
+        # Validate output shape
+        if len(classification_classes) != len(prediction):
+            raise ValueError(f"Model output classes ({len(prediction)}) do not match expected classes ({len(classification_classes)})")
         
         # Get the predicted class
         predicted_class_idx = np.argmax(prediction)
         classified_label = classification_classes[predicted_class_idx]
         confidence = float(np.max(prediction))
         
-        # Ensure probabilities sum to 1 (apply softmax if needed)
+        # Ensure probabilities sum to 1
         if not np.isclose(np.sum(prediction), 1.0, atol=1e-3):
             prediction = tf.nn.softmax(prediction).numpy()
         
@@ -104,6 +102,3 @@ def classify_image(image_array):
         
     except Exception as e:
         raise ValueError(f"Error during classification: {str(e)}")
-
-# console.log(classification.shape)
-# console.log(classification)
