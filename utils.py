@@ -13,42 +13,97 @@ from flask import jsonify
 
 
 classification_classes = {
-    0: 'Pneumonia',
-    1: 'Covid',
-    2: 'Lung_Opacity',
-    3: 'Normal',
-    4: 'Tuberculosis'
+    0: 'Alzheimer\'s Disease',
+    1: 'Normal',
+    2: 'Parkinson\'s Disease',
 }
 
-def preprocess_image(image) -> np.array:
+
+def preprocess_image(image_file):
     """
-    Here the input image is preprocessed for classification
-
-    Parameters: 
-    image (PIL.image): This is the input image to be preprocessed
-
-    It returns the preprocessed images as a Numpy array - np.array
-    """
-    image = Image.open(image).convert("RGB").resize((224, 224))
-    image = img_to_array(image)
-    image = np.expand_dims(image, axis=0)
-    # print
-    return image
-
-def classify_image(image: np.array) -> dict:
+    Preprocess the input image for classification
     
-    classification = loaded_model.predict(image, verbose=0)[0]
-    classified_label = classification_classes[np.argmax(classification)]
-    print(classification)
-    print(classification.shape)
-    return {
-        "classification": classified_label,
-        "Pneumonia": round(float(classification[0]), 6),
-        "Covid": round(float(classification[1]), 6),
-        "Lung_Opacity": round(float(classification[2]), 6),
-        "Normal": round(float(classification[3]), 6),
-        "Tuberculosis": round(float(classification[4]), 6)
-    }
+    Parameters:
+    image_file: The uploaded image file
+    
+    Returns:
+    np.array: Preprocessed image array
+    """
+    try:
+        # Open and convert image
+        image = Image.open(image_file).convert("RGB")
+        
+        # Get model input shape (assuming it's (batch, height, width, channels))
+        if hasattr(loaded_model, 'input_shape'):
+            input_shape = loaded_model.input_shape
+            if len(input_shape) == 4:  # (batch, height, width, channels)
+                target_size = (input_shape[1], input_shape[2])
+            else:
+                target_size = (224, 224)  # Default fallback
+        else:
+            target_size = (224, 224)  # Default fallback
+        
+        # Resize image
+        image = image.resize(target_size)
+        
+        # Convert to array
+        image = img_to_array(image)
+        
+        # Add batch dimension
+        image = np.expand_dims(image, axis=0)
+        
+        # Normalize pixel values (adjust based on your model's training)
+        # Common normalizations:
+        image = image / 255.0  # Scale to [0, 1]
+        # OR: image = (image - 127.5) / 127.5  # Scale to [-1, 1]
+        # OR: Use ImageNet normalization if your model was trained with it
+        
+        return image
+        
+    except Exception as e:
+        raise ValueError(f"Error processing image: {str(e)}")
+
+
+def classify_image(image_array):
+    """
+    Classify the preprocessed image
+    
+    Parameters:
+    image_array: Preprocessed image array
+    
+    Returns:
+    dict: Classification results with probabilities
+    """
+    try:
+        # Make prediction
+        prediction = loaded_model.predict(image_array, verbose=0)[0]
+        
+        # Get the predicted class
+        predicted_class_idx = np.argmax(prediction)
+        classified_label = classification_classes[predicted_class_idx]
+        confidence = float(np.max(prediction))
+        
+        # Ensure probabilities sum to 1 (apply softmax if needed)
+        if not np.isclose(np.sum(prediction), 1.0, atol=1e-3):
+            prediction = tf.nn.softmax(prediction).numpy()
+        
+        return {
+            "classification": classified_label,
+            "confidence": round(confidence, 4),
+            "probabilities": {
+                "alzheimers": round(float(prediction[0]), 4),
+                "normal": round(float(prediction[1]), 4),
+                "parkinsons": round(float(prediction[2]), 4)
+            },
+            "model_info": {
+                "format": ".keras",
+                "loaded": MODEL_LOADED,
+                "input_shape": str(loaded_model.input_shape) if hasattr(loaded_model, 'input_shape') else "Unknown"
+            }
+        }
+        
+    except Exception as e:
+        raise ValueError(f"Error during classification: {str(e)}")
 
 # console.log(classification.shape)
 # console.log(classification)
