@@ -1,5 +1,6 @@
 import os
 import requests
+import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import logging
@@ -9,7 +10,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 # Your Flask API endpoint
-API_URL = os.getenv("API_URL", "https://brain-classification.onrender.com//api/classify")
+API_URL = os.getenv("API_URL", "http://your-render-url/api/classify")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the /start command."""
@@ -69,7 +70,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 async def main() -> None:
     """Start the bot."""
-    token = os.getenv("TELEGRAM_BOT_TOKEN", "7463448864:AAHWNwDNh14aYAhdV3vfzE2GddlvL7WFceU")
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "your-bot-token-here")
     if token == "your-bot-token-here":
         logger.error("TELEGRAM_BOT_TOKEN not set. Please set the environment variable.")
         return
@@ -87,5 +88,11 @@ async def main() -> None:
     await app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    # Use the existing event loop in Replit
+    loop = asyncio.get_event_loop()
+    if loop.is_running():
+        # If loop is already running, schedule the coroutine
+        loop.create_task(main())
+    else:
+        # If no loop is running, run normally
+        loop.run_until_complete(main())
